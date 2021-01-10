@@ -6,6 +6,6 @@ WORKDIR /usr/src/app
 # Bundle app source
 COPY . .
 
-EXPOSE 4000 4443
+EXPOSE 443 443
 
 CMD [ "npm", "start" ]

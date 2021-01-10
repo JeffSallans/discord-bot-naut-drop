@@ -1,15 +1,16 @@
 {
-  "name": "discord-bot",
+  "name": "discord-bot-naut-drop",
   "version": "1.0.0",
-  "description": "Discord bot for SitePoint",
+  "description": "A node.js discord bot with the functionality of the awesomenauts drafter website",
   "main": "index.ts",
   "scripts": {
-    "start": "",
+    "start": "node ./out/index.js",
+    "build": "tsc --build tsconfig.json",
     "build-for-debug": "tsc --build tsconfig.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Jeff Sallans",
-  "license": "ISC",
+  "license": "GNU",
   "dependencies": {
     "@types/lodash": "^4.14.167",
     "discord.js": "^12.5.1",
