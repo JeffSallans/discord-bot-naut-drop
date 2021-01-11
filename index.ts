@@ -1,6 +1,8 @@
 import { isEmpty, trim } from 'lodash';
+import { Naut } from './services/naut';
 import { NautDataService } from './services/naut-data.service';
 import { NautToEmoji } from './services/naut-to-emoji';
+import { TierToEmoji } from './services/tier-to-emoji';
 const _ = require('lodash');
 require('dotenv').config();
 const Discord = require('discord.js');
@@ -168,9 +170,10 @@ const getDropMessage = (msg, nameTag: string): string => {
 
   dropCount++;
   const pack = nautDataService.getRandomNautsPack(nameTag)
-  const nautEmojis = _.map(pack, (naut) => {
+  const nautEmojis = _.map(pack, (naut: Naut) => {
     const emojiString = NautToEmoji.getEnumFromValue(naut.name).description;
-    return `${_.toUpper(_.get(naut, 'tier[0]', 'R'))}${getEmoji(msg, emojiString)}`;
+    const tierString = TierToEmoji.getEnumFromValue(`${_.get(naut, 'tier', 'rare')}-${(naut.isGolden) ? 'golden' : ''}`).description;
+    return `${getEmoji(msg, tierString)}${getEmoji(msg, emojiString)}`;
   });
   const message = `${nautEmojis[0]}  ${nautEmojis[1]}  ${nautEmojis[2]}  ${nautEmojis[3]}  ${nautEmojis[4]} -- Drop #${dropCount} ${nameTag} `;
   setDropCache(nameTag, message);

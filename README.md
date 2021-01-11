@@ -19,10 +19,8 @@ Based on the SitePoint  article: [https://www.sitepoint.com/discord-bot-node-js/
 1. Clone repo
 2. Set DISCORD_BOT_TOKEN (via GitHub Settings > Secrets)
 2. Pull dependencies with run `npm install` (via GitHub Action)
-3. Compile typescript with run `npm build` (via GitHub Action)
-3. Build container with run `` (via GitHub Action)
-4. Publish container with run `` (via GitHub Action)
-5. Deploy Container (via AWS Elastic Beanstalk)
+3. Compile typescript with run `npm run deploy`
+5. Deploy Container [AWS Dashboard](https://us-east-2.console.aws.amazon.com/elasticbeanstalk/home?region=us-east-2#/environment/dashboard?applicationName=discord-bot-naut-drop&environmentId=e-e7fkkyp7qa) (via AWS Elastic Beanstalk).  Upload the .beanstalk/Dockerrun.aws.json
 
 ## Local Development
 
