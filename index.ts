@@ -74,7 +74,7 @@ commands['health'] = (msg, args) => {
 
 commands['users'] = (msg, args) => {
   msg.reply(`Command: Get User Names
-hasp, mathmatical, mlripper, thynix, qazwode
+cgs, hasp, mathmatical, mlripper, thynix, qazwode
 `);
 }
 

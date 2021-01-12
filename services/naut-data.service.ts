@@ -6,7 +6,7 @@ import * as mathmaticalData from './mathmatical.json';
 import * as mlripperData from './mlripper.json';
 import * as thynixData from './thynix.json';
 import * as qazwodeData from './qazwode.json';
-
+import * as cgsData from './cgs.json';
 
 export class NautDataService {
 
@@ -33,6 +33,9 @@ export class NautDataService {
     }
     if (player === 'qazwode') {
       playerNauts = qazwodeData as Naut[];
+    }
+    if (player === 'cgs') {
+      playerNauts = cgsData as Naut[];
     }
     // Remove any golden flags
     playerNauts.forEach((naut) => {
