@@ -135,7 +135,7 @@ commands['naut-pref-bulk-set'] = (msg, args) => {
 }
 
 commands['drop'] = (msg, args) => {
-  const allUsers = ['hasp', 'mathmatical', 'mlripper', 'thynix', 'qazwode'];
+  const allUsers = ['cgs', 'hasp', 'mathmatical', 'mlripper', 'thynix', 'qazwode'];
 
   const fullMessage = _.reduce(allUsers, (resultSoFar, user) => {
     const message = getDropMessage(msg, user);
