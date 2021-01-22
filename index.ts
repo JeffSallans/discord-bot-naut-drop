@@ -3,6 +3,9 @@ import { Naut } from './services/naut';
 import { NautDataService } from './services/naut-data.service';
 import { NautToEmoji } from './services/naut-to-emoji';
 import { TierToEmoji } from './services/tier-to-emoji';
+import { setupConnection } from './db/mongodbConnection';
+import { getPlayerList } from './services/player-data/player-data.service';
+
 const _ = require('lodash');
 require('dotenv').config();
 const Discord = require('discord.js');
@@ -14,10 +17,13 @@ const nautDataService = new NautDataService();
 
 bot.login(TOKEN);
 
-bot.on('ready', () => {
+bot.on('ready', async () => {
   console.info(`Logged in as ${bot.user.tag}!`);
-});
 
+  const dbConnection = await setupConnection();
+  const playerList = await getPlayerList();
+  console.log(`Player List`, playerList);
+});
 
 /**
  * Displays all possible funtionality to help the user
