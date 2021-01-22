@@ -17,18 +17,20 @@ Based on the SitePoint  article: [https://www.sitepoint.com/discord-bot-node-js/
 ## Deployment
 
 1. Clone repo
-2. Set DISCORD_BOT_TOKEN (via GitHub Settings > Secrets)
-2. Pull dependencies with run `npm install` (via GitHub Action)
+2. Pull dependencies with run `npm install`
 3. Compile typescript with run `npm run deploy`
-5. Deploy Container [AWS Dashboard](https://us-east-2.console.aws.amazon.com/elasticbeanstalk/home?region=us-east-2#/environment/dashboard?applicationName=discord-bot-naut-drop&environmentId=e-e7fkkyp7qa) (via AWS Elastic Beanstalk).  Upload the .beanstalk/Dockerrun.aws.json
+4. Set TOKEN and MONGO_URL in `./beanstalk/Dockerrun.aws.json`
+5. Deploy Container [AWS Dashboard](https://us-east-2.console.aws.amazon.com/elasticbeanstalk/home?region=us-east-2#/environment/dashboard?applicationName=discord-bot-naut-drop&environmentId=e-e7fkkyp7qa) (via AWS Elastic Beanstalk).  Upload the `./beanstalk/Dockerrun.aws.json`
 
 ## Local Development
 
 1. Clone repo
 2. Run `npm install`
-3. Add TOKEN to the `.env` file, this is the discord bot token
+3. Add TOKEN and MONGO_URL to the `.env` file, this is the discord bot token
 ```
 TOKEN=Nzk2MjA2NzAxMTI3NjYzNjE2.X_UjRg.XXXXXXXXXXXXXXXXXXX
+MONGO_URL=mongodb+srv://awesomenauts_account:XXXXXXXXXXX@purethoughtlabs.ds2lz.mongodb.net/naut-drop?retryWrites=true&w=majority";
+
 ```
 3. Start VSCode debugger or run `npm run build` then `npm start`
 4. Add the discord bot to your server with the following URL

@@ -1,9 +1,5 @@
 FROM node:alpine
 
-ARG TOKEN
-
-ENV TOKEN=$TOKEN
-
 # Create app directory
 WORKDIR /usr/src/app
 

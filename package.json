@@ -8,10 +8,10 @@
     "build": "tsc --build tsconfig.json",
     "build-for-debug": "tsc --build tsconfig.json",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "docker:build": "docker build . --build-arg TOKEN -t jeffsallans/discord-bot-naut-drop",
+    "docker:build": "docker build . -t jeffsallans/discord-bot-naut-drop",
     "docker:run": "docker run -p 443:443 jeffsallans/discord-bot-naut-drop",
     "docker:push": "docker push jeffsallans/discord-bot-naut-drop",
-    "deploy": "echo \"Assuming TOKEN environment variable is set\" && npm run build && npm run docker:build && npm run docker:push"
+    "deploy": "npm run build && npm run docker:build && npm run docker:push"
   },
   "author": "Jeff Sallans",
   "license": "GNU",
