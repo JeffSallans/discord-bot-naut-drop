@@ -29,6 +29,7 @@ bot.on('ready', async () => {
 
   const dbConnection = await setupConnection(process.env.MONGO_URL);
   // Uncomment to test commands
+  await commands['drop']({ reply: (m) => {console.log(m)}}, ['drop']);
   // await commands['reroll']({ reply: (m) => {console.log(m)}}, ['reroll', 'mathmatical']);
 });
 
@@ -221,7 +222,7 @@ const getDropMessage = async (msg, nameTag: string): Promise<string> => {
   const pack = nautDataService.getRandomNautsPack(player)
   const nautEmojis = _.map(pack, (naut: Naut|null) => {
     const emojiString = NautToEmoji.getEnumFromValue(naut?.name)?.description;
-    const tierString = TierToEmoji.getEnumFromValue(`${_.get(naut, 'tier', 'rare')}-${(naut?.isGolden) ? 'golden' : ''}`)?.description;
+    const tierString = TierToEmoji.getEnumFromValue(`${_.defaultTo(_.get(naut, 'tier'), 'rare')}-${(naut?.isGolden) ? 'golden' : ''}`)?.description;
     return `${getEmoji(msg, tierString)}${getEmoji(msg, emojiString)}`;
   });
 

@@ -20,7 +20,11 @@ const playerSchema = new Schema({
   discordUserId: String,
   goldenCount: Number,
   earnedGoldenCount: Number,
-  nautPref: Array,
+  nautPref: [{
+    id: String,
+    name: String,
+    tier: String,
+  }],
 });
 
 /** The mongoose Model for interacting with the db */
