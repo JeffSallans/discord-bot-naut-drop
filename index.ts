@@ -294,8 +294,8 @@ No golden counts to spend for a reroll
   const finalHaul: Naut[] = _.shuffle(sortedHaul.slice(0, 5));
 
   const nautEmojis = _.map(finalHaul, (naut: Naut|null) => {
-    const emojiString = NautToEmoji.getEnumFromValue(naut?.name).description;
-    const tierString = TierToEmoji.getEnumFromValue(`${_.get(naut, 'tier', 'rare')}-${(naut?.isGolden) ? 'golden' : ''}`).description;
+    const emojiString = NautToEmoji.getEnumFromValue(naut?.name)?.description;
+    const tierString = TierToEmoji.getEnumFromValue(`${_.get(naut, 'tier', 'rare')}-${(naut?.isGolden) ? 'golden' : ''}`)?.description;
     return `${getEmoji(msg, tierString)}${getEmoji(msg, emojiString)}`;
   });
 
