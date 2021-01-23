@@ -220,8 +220,8 @@ const getDropMessage = async (msg, nameTag: string): Promise<string> => {
   const player = await getPlayer(nameTag);
   const pack = nautDataService.getRandomNautsPack(player)
   const nautEmojis = _.map(pack, (naut: Naut|null) => {
-    const emojiString = NautToEmoji.getEnumFromValue(naut?.name).description;
-    const tierString = TierToEmoji.getEnumFromValue(`${_.get(naut, 'tier', 'rare')}-${(naut?.isGolden) ? 'golden' : ''}`).description;
+    const emojiString = NautToEmoji.getEnumFromValue(naut?.name)?.description;
+    const tierString = TierToEmoji.getEnumFromValue(`${_.get(naut, 'tier', 'rare')}-${(naut?.isGolden) ? 'golden' : ''}`)?.description;
     return `${getEmoji(msg, tierString)}${getEmoji(msg, emojiString)}`;
   });
 
