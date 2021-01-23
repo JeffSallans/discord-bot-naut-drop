@@ -1,8 +1,7 @@
 import { connect, connection, Connection } from 'mongoose';
-require('dotenv').config();
 
-export const setupConnection = async (): Promise<Connection> => {
-  connect(process.env.MONGO_URL, { useNewUrlParser: true });
+export const setupConnection = async (mongoUrl: string): Promise<Connection> => {
+  connect(mongoUrl, { useNewUrlParser: true });
 
   return new Promise((resolve, reject) => {
     const db = connection;

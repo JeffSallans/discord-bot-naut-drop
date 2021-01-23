@@ -17,12 +17,17 @@ const TOKEN = process.env.TOKEN;
 const commands = {};
 const nautDataService = new NautDataService();
 
+console.log(JSON.stringify({
+  TOKEN: process.env.TOKEN,
+  MONGO_URL: process.env.MONGO_URL
+}, null, '\t'));
+
 bot.login(TOKEN);
 
 bot.on('ready', async () => {
   console.info(`Logged in as ${bot.user.tag}!`);
 
-  const dbConnection = await setupConnection();
+  const dbConnection = await setupConnection(process.env.MONGO_URL);
 });
 
 /**
@@ -177,8 +182,8 @@ ${nameTag} preference updated
 
 commands['drop'] = async (msg, args) => {
   const playerList = await getPlayerList();
-  const allMessages = await Promise.all(_.map(playerList, async (player: IPlayer) => {
-    return await getDropMessage(msg, player.player);
+  const allMessages = await Promise.all(_.map(playerList, (player: IPlayer) => {
+    return getDropMessage(msg, player.player);
   }));
   const fullMessage = _.reduce(allMessages, (resultSoFar, message) => {
     return `${resultSoFar}
@@ -212,9 +217,9 @@ const getDropMessage = async (msg, nameTag: string): Promise<string> => {
 
   const player = await getPlayer(nameTag);
   const pack = nautDataService.getRandomNautsPack(player)
-  const nautEmojis = _.map(pack, (naut: Naut) => {
-    const emojiString = NautToEmoji.getEnumFromValue(naut.name).description;
-    const tierString = TierToEmoji.getEnumFromValue(`${_.get(naut, 'tier', 'rare')}-${(naut.isGolden) ? 'golden' : ''}`).description;
+  const nautEmojis = _.map(pack, (naut: Naut|null) => {
+    const emojiString = NautToEmoji.getEnumFromValue(naut?.name).description;
+    const tierString = TierToEmoji.getEnumFromValue(`${_.get(naut, 'tier', 'rare')}-${(naut?.isGolden) ? 'golden' : ''}`).description;
     return `${getEmoji(msg, tierString)}${getEmoji(msg, emojiString)}`;
   });
 
@@ -301,7 +306,7 @@ Player: ${nameTag} Count: ${player.goldenCount}
   `);
 }
 
-bot.on('message', msg => {
+bot.on('message', async msg => {
   const content: string = msg.content;
   const taggedUser = msg.mentions.users.first();
 
@@ -317,7 +322,7 @@ bot.on('message', msg => {
       });
       const command = _.get(commands, args[0], commands['help']);
 
-      command(msg, args);
+      await command(msg, args);
     } catch (e) {
       console.error(e);
       msg.reply('An error has occured, talk to Jeff.');
