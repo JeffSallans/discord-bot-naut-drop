@@ -70,6 +70,6 @@ export class NautDataService {
       nautPool[goldPlatingIndex].isGolden = true;
     }
 
-    return nautPool;
+    return shuffle(nautPool);
   }
 }

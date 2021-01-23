@@ -28,7 +28,7 @@ export const getPlayerList = async (): Promise<IPlayer[]> => {
 export const getPlayer = async (playerName: string): Promise<IPlayer|null> => {
   const playerList = await getPlayerList();
   const player = find(playerList, (target) => {
-    return target.player === playerName;
+    return target.player === _.toLower(playerName);
   });
   return player;
 };
@@ -51,7 +51,7 @@ export const savePlayer = async (newPlayer: IPlayer): Promise<Document<IPlayer>>
 /** Returns the list of players */
 const getMongoPlayerById = async (player: string): Promise<Document<IPlayer>> => {
   return new Promise((resolve, reject) => {
-    Player.findOne( { "player": player }, (err, result) => {
+    Player.findOne( { "player": _.toLower(player) }, (err, result) => {
       if (err) reject(err);
       resolve(result);
     })
@@ -129,6 +129,6 @@ const getNautString = (msg, nautList: Naut[]): string => {
 
 /** Returns the emoji or name if not found */
 export const getEmoji = (msg, emojiName): Emoji|string => {
-  const emoji = msg.guild.emojis.cache.find(emoji => emoji.name == emojiName);
+  const emoji = _.get(msg, 'guild.emojis.cache', []).find(emoji => emoji.name == emojiName);
   return _.defaultTo(emoji, `:${emojiName}:`);
 }
