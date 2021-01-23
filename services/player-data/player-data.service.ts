@@ -71,7 +71,7 @@ export const parseNautPref = (msg,
 ): Naut[] => {
 
   const preferences = _.map(nautJsonData as Naut[], (pref) => {
-    pref.tier = '';
+    pref.tier = undefined;
     pref.isGolden = false;
     return pref;
   });
