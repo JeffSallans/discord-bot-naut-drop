@@ -7,6 +7,8 @@ import * as mlripperData from './mlripper.json';
 import * as thynixData from './thynix.json';
 import * as qazwodeData from './qazwode.json';
 import * as cgsData from './cgs.json';
+import { getPlayer } from './player-data/player-data.service';
+import { IPlayer } from '../db/collections/Player';
 
 export class NautDataService {
 
@@ -17,26 +19,9 @@ export class NautDataService {
     console.debug('nauts: ', this.allNauts);
   }
 
-  getNautsForPlayer(player: string): Naut[] {
-    let playerNauts = [];
-    if (player === 'hasp') {
-      playerNauts = haspData as Naut[];
-    }
-    if (player === 'mathmatical') {
-      playerNauts = mathmaticalData as Naut[];
-    }
-    if (player === 'mlripper') {
-      playerNauts = mlripperData as Naut[];
-    }
-    if (player === 'thynix') {
-      playerNauts = thynixData as Naut[];
-    }
-    if (player === 'qazwode') {
-      playerNauts = qazwodeData as Naut[];
-    }
-    if (player === 'cgs') {
-      playerNauts = cgsData as Naut[];
-    }
+  getNautsForPlayer(player: IPlayer): Naut[] {
+    let playerNauts = player.nautPref;
+
     // Remove any golden flags
     playerNauts.forEach((naut) => {
       naut.isGolden = false;
@@ -44,7 +29,7 @@ export class NautDataService {
     return playerNauts;
   }
 
-  getRandomNautsPack(player: string) {
+  getRandomNautsPack(player: IPlayer) {
     const nauts = this.getNautsForPlayer(player);
 
     const legendaryNauts = filter(nauts, (naut) => naut.tier === 'legendary') || [];

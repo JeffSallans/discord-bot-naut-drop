@@ -1,10 +1,12 @@
-import { isEmpty, trim } from 'lodash';
+import { defaultTo, isEmpty, trim } from 'lodash';
 import { Naut } from './services/naut';
 import { NautDataService } from './services/naut-data.service';
 import { NautToEmoji } from './services/naut-to-emoji';
 import { TierToEmoji } from './services/tier-to-emoji';
 import { setupConnection } from './db/mongodbConnection';
-import { getPlayerList } from './services/player-data/player-data.service';
+import { getEmoji, getPlayer, getPlayerList, nautPrefToString, parseNautPref, savePlayer } from './services/player-data/player-data.service';
+import { connections } from 'mongoose';
+import { IPlayer } from './db/collections/Player';
 
 const _ = require('lodash');
 require('dotenv').config();
@@ -21,8 +23,6 @@ bot.on('ready', async () => {
   console.info(`Logged in as ${bot.user.tag}!`);
 
   const dbConnection = await setupConnection();
-  const playerList = await getPlayerList();
-  console.log(`Player List`, playerList);
 });
 
 /**
@@ -32,7 +32,7 @@ bot.on('ready', async () => {
 commands['help'] = (msg, args) => {
   msg.reply(`Command: Help
 Command format is: @naut-packs <command> <argument1> <argument2>
-All <command> options: verbose-help, drop, drop-get, drop-reroll, users, naut-names, golden-count-add, golden-count, naut-pref-get, naut-pref-set, naut-pref-get-bulk, naut-pref-set-bulk, health
+All <command> options: verbose-help, drop, setup, reroll, users, nauts, goldens-add, goldens, preference, health
 `);
 }
 
@@ -43,29 +43,21 @@ All <command> options: verbose-help, drop, drop-get, drop-reroll, users, naut-na
 commands['verbose-help'] = (msg, args) => {
   msg.reply(`Command: Verbose Help
 Command format is: @naut-packs <command> <arguments1> <argument2>
-All <command> options: verbose-help, drop, drop-get, drop-reroll, users, naut-names, golden-count-add, golden-count, naut-pref-get, naut-pref-set, naut-pref-get-bulk, naut-pref-set-bulk, health, verbose-help
+All <command> options: verbose-help, drop, setup, reroll, users, nauts, goldens-add, goldens, preference, health, verbose-help
 
 @naut-packs users
-@naut-packs naut-names
-@naut-packs naut-pref-get <userTag> <nautName>
+@naut-packs nauts
+@setup <userTag> :Legendary: <naut1> <naut2> <naut3> :Epic: <naut1> <naut2> <naut3> <naut4> <naut5> :Ban: <naut1> <naut2> <naut3> <naut4> <naut5>
 - userTag is the person the preference is for
-- nautName is the awesomenaut name (see the values returned in naut-names)
-@naut-packs naut-pref-set <userTag> <nautName> <rarity>
-- userTag is the person the preference is for
-- nautName is the awesomenaut name (see the values returned in naut-pref-get)
-- rarity is to set the preference value (0 - ban, 1 - common, 2 - epic, 3 - legendary)
-@naut-packs naut-pref-bulk-get <userTag>
-- userTag is the person the current rarity is for
-@naut-packs naut-pref-bulk-set <userTag> <rarityString>
-- userTag is the person the preference is for
-- rarityString is the rarity of all the awesomenauts in alphabetical order
-@drop-get <userTag>
+@naut-packs drop <userTag1> <userTag2> <...>
+- userTag is the people to roll for
+@naut-packs preference <userTag>
+- userTag is the person display a preference for
+@reroll <userTag>
 - userTag is the person the drop is for
-@drop-reroll <userTag>
+@goldens <userTag>
 - userTag is the person the drop is for
-@golden-count <userTag>
-- userTag is the person the drop is for
-@golden-count-add <userTag>
+@goldens-add <userTag>
 - userTag is the person the drop is for
   `);
 }
@@ -75,16 +67,29 @@ All <command> options: verbose-help, drop, drop-get, drop-reroll, users, naut-na
  * @param msg Discord message object
  */
 commands['health'] = (msg, args) => {
+  if (connections.length < 1) {
+    msg.reply('this bot is not connected to the database');
+  }
+
   msg.reply('this bot is up and running');
 }
 
-commands['users'] = (msg, args) => {
+commands['users'] = async (msg, args) => {
+  const userList = await getPlayerList();
+  const userListString = _.reduce(userList, (resultSoFar, player) => {
+    if (resultSoFar === '') {
+      resultSoFar = player.player;
+    } else {
+      resultSoFar += `, ${player.player}`;
+    }
+    return resultSoFar;
+  }, '');
   msg.reply(`Command: Get User Names
-cgs, hasp, mathmatical, mlripper, thynix, qazwode
+${userListString}
 `);
 }
 
-commands['naut-names'] = (msg, args) => {
+commands['nauts'] = (msg, args) => {
   const allNauts = NautToEmoji.getAllPairs();
   const allNautsString = _.reduce(allNauts, (resultSoFar, naut) => {
     if (resultSoFar === '') {
@@ -99,60 +104,7 @@ ${allNautsString}
 `);
 }
 
-commands['naut-pref-get'] = (msg, args) => {
-  const [command, nameTag, nautDescription] = args;
-  if (isEmpty(nameTag)) {
-    msg.reply(`Command: Get Naut Preference
-Invalid message format, missing nameTag argument. See @naut-drop help for details.
-    `);
-    return;
-  }
-  if (isEmpty(nautDescription)) {
-    msg.reply(`Command: Get Naut Preference
-Invalid message format, missing nautName argument. See @naut-drop help for details.
-    `);
-    return;
-  }
-  const nautName = _.get(NautToEmoji.getEnumFromDescription(nautDescription), 'value', '');
-  if (isEmpty(nautName)) {
-    msg.reply(`Command: Get Naut Preference
-Invalid message format, invalid nautName argument. See @naut-drop help for details.
-    `);
-    return;
-  }
-
-  const nautPref = nautDataService.getNautsForPlayer(nameTag);
-  msg.reply(`Command: Get Naut Preference
-Player: ${nameTag} Naut: ${nautName}
-Pref: ${JSON.stringify(nautPref.find(naut => naut.id === nautName), null, '\t')}
-`);
-}
-
-commands['naut-pref-set'] = (msg, args) => {
-  msg.reply('Not Implemented');
-}
-
-commands['naut-pref-bulk-get'] = (msg, args) => {
-  msg.reply('Not Implemented');
-}
-
-commands['naut-pref-bulk-set'] = (msg, args) => {
-  msg.reply('Not Implemented');
-}
-
-commands['drop'] = (msg, args) => {
-  const allUsers = ['cgs', 'hasp', 'mathmatical', 'mlripper', 'thynix', 'qazwode'];
-
-  const fullMessage = _.reduce(allUsers, (resultSoFar, user) => {
-    const message = getDropMessage(msg, user);
-    return `${resultSoFar}
-${message}`;
-  }, '');
-
-  msg.reply(fullMessage);
-}
-
-commands['drop-get'] = (msg, args) => {
+commands['preference'] = async (msg, args) => {
   const [command, nameTag] = args;
   if (isEmpty(nameTag)) {
     msg.reply(`Command: Get Naut Preference
@@ -161,26 +113,112 @@ Invalid message format, missing nameTag argument. See @naut-drop help for detail
     return;
   }
 
-  const message = getDropMessage(msg, nameTag);
+  const player = await getPlayer(nameTag);
+  const nautPrefString = nautPrefToString(msg, player.nautPref);
+
+  msg.reply(`Command: Get Naut Preference
+${nameTag} ${nautPrefString}
+`);
+}
+
+commands['setup'] = async (msg, args) => {
+  const [
+    command,
+    nameTag,
+    legendaryIcon, legNaut1, legNaut2, legNaut3,
+    epicIcon, epicNaut1, epicNaut2, epicNaut3, epicNaut4, epicNaut5,
+    banIcon, banNaut1, banNaut2, banNaut3, banNaut4, banNaut5
+  ] = args;
+  if (isEmpty(nameTag)) {
+    msg.reply(`Command: Get Naut Preference
+Invalid message format, missing nameTag argument. See @naut-drop help for details.
+    `);
+    return;
+  }
+  if (isEmpty(banNaut5)) {
+    msg.reply(`Command: Get Naut Preference
+Invalid message format, not enough arguments. See @naut-drop help for details.
+    `);
+    return;
+  }
+
+  if (legendaryIcon !== getEmoji(msg, TierToEmoji.LEGENDARY.description).toString() ||
+    epicIcon !== getEmoji(msg, TierToEmoji.EPIC.description).toString() ||
+    banIcon !== getEmoji(msg, TierToEmoji.BAN.description)) {
+    msg.reply(`Command: Get Naut Preference
+Invalid message format, incorrect number of legendary/epic nauts. See @naut-drop help for details.
+    `);
+    return;
+  }
+
+  let player = await getPlayer(nameTag);
+  if (player) {
+    player = {
+      player: nameTag,
+      discordUserId: nameTag,
+      goldenCount: 0,
+      earnedGoldenCount: 0,
+      nautPref: [],
+    };
+  }
+
+  player.nautPref = parseNautPref(msg,
+    [legNaut1, legNaut2, legNaut3],
+    [epicNaut1, epicNaut2, epicNaut3, epicNaut4, epicNaut5],
+    [banNaut1, banNaut2, banNaut3, banNaut4, banNaut5]
+  );
+
+  await savePlayer(player);
+
+  msg.reply(`Command: Setup
+${nameTag} preference updated
+`);
+}
+
+commands['drop'] = async (msg, args) => {
+  const playerList = await getPlayerList();
+  const allMessages = await Promise.all(_.map(playerList, async (player: IPlayer) => {
+    return await getDropMessage(msg, player.player);
+  }));
+  const fullMessage = _.reduce(allMessages, (resultSoFar, message) => {
+    return `${resultSoFar}
+${message}`;
+  }, '');
+
+  msg.reply(fullMessage);
+}
+
+commands['drop-get'] = async (msg, args) => {
+  const [command, nameTag] = args;
+  if (isEmpty(nameTag)) {
+    msg.reply(`Command: Get Naut Preference
+Invalid message format, missing nameTag argument. See @naut-drop help for details.
+    `);
+    return;
+  }
+
+  const message = await getDropMessage(msg, nameTag);
   msg.reply(message);
 }
 
 let dropCount = 0;
 let cachedDropMap = {};
 let cacheTimeouts = {};
-const getDropMessage = (msg, nameTag: string): string => {
+const getDropMessage = async (msg, nameTag: string): Promise<string> => {
   const cachedDrop = getDropCache(nameTag);
   if (!_.isNil(cachedDrop)) {
     return cachedDrop;
   }
 
-  dropCount++;
-  const pack = nautDataService.getRandomNautsPack(nameTag)
+  const player = await getPlayer(nameTag);
+  const pack = nautDataService.getRandomNautsPack(player)
   const nautEmojis = _.map(pack, (naut: Naut) => {
     const emojiString = NautToEmoji.getEnumFromValue(naut.name).description;
     const tierString = TierToEmoji.getEnumFromValue(`${_.get(naut, 'tier', 'rare')}-${(naut.isGolden) ? 'golden' : ''}`).description;
     return `${getEmoji(msg, tierString)}${getEmoji(msg, emojiString)}`;
   });
+
+  dropCount++;
   const message = `${nautEmojis[0]}  ${nautEmojis[1]}  ${nautEmojis[2]}  ${nautEmojis[3]}  ${nautEmojis[4]} -- Drop #${dropCount} ${nameTag} `;
   setDropCache(nameTag, message);
   return message;
@@ -189,6 +227,7 @@ const getDropMessage = (msg, nameTag: string): string => {
 const getDropCache = (nameTag) => {
   return cachedDropMap[nameTag];
 }
+
 const setDropCache = (nameTag, message) => {
   cachedDropMap[nameTag] = message;
   cacheTimeouts[nameTag] = setTimeout(() => {
@@ -201,7 +240,7 @@ const clearDropCache = (nameTag) => {
 }
 
 let goldens = {};
-commands['drop-reroll'] = (msg, args) => {
+commands['reroll'] = async (msg, args) => {
   const [command, nameTag] = args;
   if (isEmpty(nameTag)) {
     msg.reply(`Command: Reroll Drop
@@ -210,7 +249,8 @@ Invalid message format, missing nameTag argument. See @naut-drop help for detail
     return;
   }
 
-  const goldenCount = _.get(goldens, nameTag, 0);
+  const player = await getPlayer(nameTag);
+  const goldenCount = defaultTo(player.goldenCount, 0);
 
   if (goldenCount === 0) {
     msg.reply(`Command: Reroll Drop
@@ -219,12 +259,13 @@ No golden counts to spend for a reroll
     return;
   }
 
-  goldens[nameTag]--;
+  player.goldenCount--;
+  await savePlayer(player);
   clearDropCache(nameTag);
   commands['drop-get'](msg, ['drop-get', nameTag]);
 }
 
-commands['golden-count'] = (msg, args) => {
+commands['goldens'] = async (msg, args) => {
   const [command, nameTag] = args;
   if (isEmpty(nameTag)) {
     msg.reply(`Command: Golden Count
@@ -233,14 +274,15 @@ Invalid message format, missing nameTag argument. See @naut-drop help for detail
     return;
   }
 
-  const goldenCount = _.get(goldens, nameTag, 0);
+  const player = await getPlayer(nameTag);
+  const goldenCount = defaultTo(player.goldenCount, 0);
 
   msg.reply(`Command: Golden Count
 Player: ${nameTag} Count: ${goldenCount}
   `);
 }
 
-commands['golden-count-add'] = (msg, args) => {
+commands['goldens-add'] = async (msg, args) => {
   const [command, nameTag] = args;
   if (isEmpty(nameTag)) {
     msg.reply(`Command: Increment Golden Count
@@ -249,17 +291,14 @@ Invalid message format, missing nameTag argument. See @naut-drop help for detail
     return;
   }
 
-  const goldenCount = _.get(goldens, nameTag, 0);
-  goldens[nameTag] = goldenCount + 1;
+  const player = await getPlayer(nameTag);
+  player.goldenCount = defaultTo(player.goldenCount, 0) + 1;
+  player.earnedGoldenCount = defaultTo(player.earnedGoldenCount, 0) + 1;
+  await savePlayer(player);
 
   msg.reply(`Command: Increment Golden Count
-Player: ${nameTag} Count: ${goldens[nameTag]}
+Player: ${nameTag} Count: ${player.goldenCount}
   `);
-}
-
-const getEmoji = (msg, emojiName) => {
-  const emoji = msg.guild.emojis.cache.find(emoji => emoji.name == emojiName);
-  return emoji;
 }
 
 bot.on('message', msg => {
