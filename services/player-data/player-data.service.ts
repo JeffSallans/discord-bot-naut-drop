@@ -70,7 +70,11 @@ export const parseNautPref = (msg,
   banNautList: string[]
 ): Naut[] => {
 
-  const preferences = nautJsonData as Naut[];
+  const preferences = _.map(nautJsonData as Naut[], (pref) => {
+    pref.tier = null;
+    pref.isGolden = null;
+    return pref;
+  });
 
   // Set legendary pref
   _.forEach(legendaryNautList, (legendaryNaut) => {
