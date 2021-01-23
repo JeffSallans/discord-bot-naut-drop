@@ -28,6 +28,8 @@ bot.on('ready', async () => {
   console.info(`Logged in as ${bot.user.tag}!`);
 
   const dbConnection = await setupConnection(process.env.MONGO_URL);
+  // Uncomment to test commands
+  // await commands['reroll']({ reply: (m) => {console.log(m)}}, ['reroll', 'mathmatical']);
 });
 
 /**
@@ -182,7 +184,7 @@ ${nameTag} preference updated
 
 commands['drop'] = async (msg, args) => {
   const playerList = await getPlayerList();
-  const allMessages = await Promise.all(_.map(playerList, (player: IPlayer) => {
+  const allMessages = await Promise.all(_.map(playerList, (player: IPlayer): Promise<string> => {
     return getDropMessage(msg, player.player);
   }));
   const fullMessage = _.reduce(allMessages, (resultSoFar, message) => {
@@ -244,7 +246,6 @@ const clearDropCache = (nameTag) => {
   cachedDropMap[nameTag] = null;
 }
 
-let goldens = {};
 commands['reroll'] = async (msg, args) => {
   const [command, nameTag] = args;
   if (isEmpty(nameTag)) {
@@ -267,7 +268,42 @@ No golden counts to spend for a reroll
   player.goldenCount--;
   await savePlayer(player);
   clearDropCache(nameTag);
-  commands['drop-get'](msg, ['drop-get', nameTag]);
+
+  const pack1 = nautDataService.getRandomNautsPack(player)
+  const pack2 = nautDataService.getRandomNautsPack(player)
+  const pack3 = nautDataService.getRandomNautsPack(player)
+  const haul = [...pack1, ...pack2, ...pack3];
+  const sortedHaul: Naut[] = _.sortBy(_.uniqBy(haul, 'id'), (naut) => {
+    if (naut.tier === 'legendary' && naut.isGolden) return 1;
+    if (naut.tier === 'legendary') return 2;
+    if (naut.tier === 'epic' && naut.isGolden) return 3;
+    if (naut.tier === 'epic') return 4;
+    if (naut.tier === 'rare' && naut.isGolden) return 5;
+    return 6;
+  });
+
+  // Guarentee a legendary with golden roll
+  const hasLegendaryNauts = _.some(sortedHaul, (naut) => naut && (naut.tier === 'legendary'));
+  if (!hasLegendaryNauts) {
+    const legendaryNauts = _.filter(player.nautPref, (naut) => naut.tier === 'legendary') || [];
+    const shuffledLegendaryNauts = _.shuffle(legendaryNauts);
+    sortedHaul[0] = shuffledLegendaryNauts.pop();
+  }
+
+  // Keep top 5 results, then shuffle them
+  const finalHaul: Naut[] = _.shuffle(sortedHaul.slice(0, 5));
+
+  const nautEmojis = _.map(finalHaul, (naut: Naut|null) => {
+    const emojiString = NautToEmoji.getEnumFromValue(naut?.name).description;
+    const tierString = TierToEmoji.getEnumFromValue(`${_.get(naut, 'tier', 'rare')}-${(naut?.isGolden) ? 'golden' : ''}`).description;
+    return `${getEmoji(msg, tierString)}${getEmoji(msg, emojiString)}`;
+  });
+
+  dropCount++;
+  const message = `${nautEmojis[0]}  ${nautEmojis[1]}  ${nautEmojis[2]}  ${nautEmojis[3]}  ${nautEmojis[4]} -- Drop #${dropCount} ${nameTag} `;
+  setDropCache(nameTag, message);
+
+  msg.reply(message);
 }
 
 commands['goldens'] = async (msg, args) => {
