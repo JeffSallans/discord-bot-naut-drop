@@ -152,7 +152,7 @@ Invalid message format, not enough arguments. See @naut-drop help for details.
 
   if (legendaryIcon !== getEmoji(msg, TierToEmoji.LEGENDARY.description).toString() ||
     epicIcon !== getEmoji(msg, TierToEmoji.EPIC.description).toString() ||
-    banIcon !== getEmoji(msg, TierToEmoji.BAN.description)) {
+    banIcon !== getEmoji(msg, TierToEmoji.BAN.description).toString()) {
     msg.reply(`Command: Get Naut Preference
 Invalid message format, incorrect number of legendary/epic nauts. See @naut-drop help for details.
     `);
