@@ -5,7 +5,7 @@ import { NautToEmoji } from './services/naut-to-emoji';
 import { TierToEmoji } from './services/tier-to-emoji';
 import { setupConnection } from './db/mongodbConnection';
 import { getEmoji, getPlayer, getPlayerList, nautPrefToString, parseNautPref, savePlayer } from './services/player-data/player-data.service';
-import { connections } from 'mongoose';
+import { connection, connections, Mongoose } from 'mongoose';
 import { IPlayer } from './db/collections/Player';
 
 const _ = require('lodash');
@@ -13,9 +13,13 @@ require('dotenv').config();
 const Discord = require('discord.js');
 const bot = new Discord.Client();
 const TOKEN = process.env.TOKEN;
-
-const commands = {};
 const nautDataService = new NautDataService();
+
+export const commands = {};
+let resolveReadyForCommands;
+export const readyForCommands = new Promise((resolve, reject) => {
+  resolveReadyForCommands = resolve;
+});
 
 console.log(JSON.stringify({
   TOKEN: process.env.TOKEN,
@@ -24,12 +28,20 @@ console.log(JSON.stringify({
 
 bot.login(TOKEN);
 
+/** Cleaning up discord bot and mongo connection */
+export const destroy = async () => {
+  await connection.close();
+  await bot.destroy();
+};
+
 bot.on('ready', async () => {
   console.info(`Logged in as ${bot.user.tag}!`);
 
   const dbConnection = await setupConnection(process.env.MONGO_URL);
+  resolveReadyForCommands();
+
   // Uncomment to test commands
-  await commands['drop']({ reply: (m) => {console.log(m)}}, ['drop']);
+  // await commands['drop']({ reply: (m) => {console.log(m)}}, ['drop']);
   // await commands['reroll']({ reply: (m) => {console.log(m)}}, ['reroll', 'mathmatical']);
 });
 
@@ -40,7 +52,7 @@ bot.on('ready', async () => {
 commands['help'] = (msg, args) => {
   msg.reply(`Command: Help
 Command format is: @naut-packs <command> <argument1> <argument2>
-All <command> options: verbose-help, drop, setup, reroll, users, nauts, goldens-add, goldens, preference, health
+All <command> options: verbose-help, drop, setup, reroll, users, nauts, goldens-add, goldens, preference, teams, health
 `);
 }
 
@@ -51,7 +63,7 @@ All <command> options: verbose-help, drop, setup, reroll, users, nauts, goldens-
 commands['verbose-help'] = (msg, args) => {
   msg.reply(`Command: Verbose Help
 Command format is: @naut-packs <command> <arguments1> <argument2>
-All <command> options: verbose-help, drop, setup, reroll, users, nauts, goldens-add, goldens, preference, health, verbose-help
+All <command> options: verbose-help, drop, setup, reroll, users, nauts, goldens-add, goldens, preference, teams, health, verbose-help
 
 @naut-packs users
 @naut-packs nauts
@@ -61,12 +73,14 @@ All <command> options: verbose-help, drop, setup, reroll, users, nauts, goldens-
 - userTag is the people to roll for
 @naut-packs preference <userTag>
 - userTag is the person display a preference for
-@reroll <userTag>
+@naut-packs reroll <userTag>
 - userTag is the person the drop is for
-@goldens <userTag>
+@naut-packs goldens <userTag>
 - userTag is the person the drop is for
-@goldens-add <userTag>
+@naut-packs goldens-add <userTag>
 - userTag is the person the drop is for
+@naut-packs teams <userTag1> <userTag2> <userTag3> <userTag4>
+- userTag team members to shuffle
   `);
 }
 
@@ -160,7 +174,7 @@ Invalid message format, incorrect number of legendary/epic nauts. See @naut-drop
   }
 
   let player = await getPlayer(nameTag);
-  if (player) {
+  if (!player) {
     player = {
       player: nameTag,
       discordUserId: nameTag,
@@ -183,10 +197,28 @@ ${nameTag} preference updated
 `);
 }
 
+commands['teams'] = async (msg, args) => {
+  const allPlayers = args.slice(1);
+  const shuffledPlayers = _.shuffle(allPlayers);
+
+  let halfwayThrough = Math.floor(shuffledPlayers.length / 2.0);
+  // or instead of floor you can use ceil depending on what side gets the extra data
+
+  let leftTeam = shuffledPlayers.slice(0, halfwayThrough);
+  let rightTeam = shuffledPlayers.slice(halfwayThrough, shuffledPlayers.length);
+
+  msg.reply(`Left Team: ${_.join(leftTeam, ', ')}
+Right Team: ${_.join(rightTeam, ', ')}`);
+}
+
 commands['drop'] = async (msg, args) => {
-  const playerList = await getPlayerList();
-  const allMessages = await Promise.all(_.map(playerList, (player: IPlayer): Promise<string> => {
-    return getDropMessage(msg, player.player);
+  let allPlayers = args.slice(1);
+  if (allPlayers.length === 0) {
+    const playerList = await getPlayerList();
+    allPlayers = _.map(playerList, player => player.player);
+  }
+  const allMessages = await Promise.all(_.map(allPlayers, (player: string): Promise<string> => {
+    return getDropMessage(msg, player);
   }));
   const fullMessage = _.reduce(allMessages, (resultSoFar, message) => {
     return `${resultSoFar}
