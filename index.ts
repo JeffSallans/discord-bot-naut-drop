@@ -41,7 +41,7 @@ bot.on('ready', async () => {
   resolveReadyForCommands();
 
   // Uncomment to test commands
-  // await commands['drop']({ reply: (m) => {console.log(m)}}, ['drop']);
+  await commands['drop']({ reply: (m) => {console.log(m)}}, ['drop']);
   // await commands['reroll']({ reply: (m) => {console.log(m)}}, ['reroll', 'mathmatical']);
 });
 
