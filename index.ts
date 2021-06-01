@@ -1,6 +1,5 @@
 import { defaultTo, isEmpty, trim, keys, map } from 'lodash';
 import * as FuzzyMatching from 'fuzzy-matching';
-import { Client } from "discord-slash-commands-client";
 import { Character } from './services/character';
 import { CharacterDataService } from './services/character-data.service';
 import { CharacterToEmoji } from './services/character-to-emoji';
@@ -12,6 +11,7 @@ import { IPlayer } from './db/collections/Player';
 import { getDiscordMonospace } from './services/monospacer/monospacer.service';
 import { DiscordMessage } from './discord-message';
 import { setupDiscordMessageReveal } from './services/discord-message-reveal/discord-message-reveal.service';
+import { MessageEmbed } from 'discord.js';
 
 const _ = require('lodash');
 require('dotenv').config();
@@ -33,9 +33,6 @@ console.log(JSON.stringify({
 
 bot.login(TOKEN);
 
-// attach the interaction client to discord.js client
-bot.interactions = new Client(process.env.TOKEN, "You bots user id");
-
 /** Cleaning up discord bot and mongo connection */
 export const destroy = async () => {
   await connection.close();
@@ -49,21 +46,37 @@ bot.on('ready', async () => {
   // Setup DB connection
   const dbConnection = await setupConnection(process.env.MONGO_URL);
 
-  // Setup slash command
-  const slashClient = new Client(
-    process.env.TOKEN,
-    bot.user.id
-  );
-  // Will create a new command and log its data. If a command with this name already exist will that be overwritten.
-  await slashClient
-    .createCommand({
-      name: "naut-drop",
-      description: "returns a naut pack for the current user",
-    })
-    .then((message) => {
-      console.log(message);
-    })
-    .catch(console.error);
+  const slashCommands = await bot.api.applications(bot.user.id).guilds('575126105510510593')
+    .commands.get();
+  console.log(slashCommands);
+
+  await bot.api.applications(bot.user.id).guilds('575126105510510593')
+    .commands.post({
+      data: {
+          name: 'nautdrop',
+          description: 'Returns a naut pack for the user'
+          // possible options here e.g. options: [{...}]
+      }
+  });
+
+
+    // attach and event listener for the interactionCreate event
+  bot.ws.on('INTERACTION_CREATE', async interaction => {
+    const command = interaction.data.name.toLowerCase();
+    const args = interaction.data.options;
+
+    if (command === 'nautdrop') {
+      commands['drop']({
+        reply: (message) => {
+          bot.api.interactions(interaction.id, interaction.token).callback.post({
+            data: {
+                type: 4,
+                data: { content: 'test' }
+            }
+          });
+        }, author: interaction?.member?.user}, ['drop']);
+    }
+  });
 
   resolveReadyForCommands();
 
