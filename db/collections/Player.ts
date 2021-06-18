@@ -12,7 +12,7 @@ export interface IPlayer {
     /** How many goldens the player has earned total */
     earnedGoldenCount: number,
     /** The character preferences of the player */
-    characterPref: Character[],
+    nautPref: Character[],
 };
 
 const playerSchema = new Schema({
@@ -20,7 +20,7 @@ const playerSchema = new Schema({
   discordUserId: String,
   goldenCount: Number,
   earnedGoldenCount: Number,
-  characterPref: [{
+  nautPref: [{
     id: String,
     name: String,
     tier: String,

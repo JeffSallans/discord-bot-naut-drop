@@ -13,7 +13,7 @@ export class CharacterDataService {
   }
 
   getCharactersForPlayer(player: IPlayer): Character[] {
-    let playerCharacters = player.characterPref;
+    let playerCharacters = player?.nautPref;
 
     // Remove any golden flags
     playerCharacters.forEach((character) => {

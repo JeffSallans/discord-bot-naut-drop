@@ -79,12 +79,12 @@ const getMongoPlayerByDiscordId = async (discordUserId: string): Promise<Documen
   });
 };
 
-/** parses the character preference string to CharacterPref object */
+/** parses the character preference string to nautPref object */
 export const parseRawCharacterPref = (msg, characterPrefString: string): Character[] => {
   return [];
 }
 
-/** parses the character preference arguments to CharacterPref object */
+/** parses the character preference arguments to nautPref object */
 export const parseCharacterPref = (msg,
   legendaryCharacterList: string[],
   epicCharacterList: string[],
@@ -129,10 +129,10 @@ const parseCharacter = (msg, characterString: string): CharacterToEmoji|null => 
 };
 
 /** Returns the character preference as a string */
-export const characterPrefToString = (msg, characterPref: Character[]): string => {
-  const legendaryCharacters = getCharacterString(msg, _.filter(characterPref, (pref) => pref.tier === 'legendary'));
-  const epicCharacters = getCharacterString(msg, _.filter(characterPref, (pref) => pref.tier === 'epic'));
-  const banCharacters = getCharacterString(msg, _.filter(characterPref, (pref) => pref.tier === 'common'));
+export const characterPrefToString = (msg, nautPref: Character[]): string => {
+  const legendaryCharacters = getCharacterString(msg, _.filter(nautPref, (pref) => pref.tier === 'legendary'));
+  const epicCharacters = getCharacterString(msg, _.filter(nautPref, (pref) => pref.tier === 'epic'));
+  const banCharacters = getCharacterString(msg, _.filter(nautPref, (pref) => pref.tier === 'common'));
 
   return `${getEmoji(msg, TierToEmoji.LEGENDARY.description)} ${legendaryCharacters} ${getEmoji(msg, TierToEmoji.EPIC.description)} ${epicCharacters} ${getEmoji(msg, TierToEmoji.BAN.description)} ${banCharacters}`;
 };

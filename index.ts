@@ -53,7 +53,7 @@ bot.on('ready', async () => {
   await bot.api.applications(bot.user.id).guilds('575126105510510593')
     .commands.post({
       data: {
-          name: 'nautdrop',
+          name: 'drop',
           description: 'Returns a naut pack for the user'
           // possible options here e.g. options: [{...}]
       }
@@ -65,13 +65,13 @@ bot.on('ready', async () => {
     const command = interaction.data.name.toLowerCase();
     const args = interaction.data.options;
 
-    if (command === 'nautdrop') {
+    if (command === 'drop') {
       commands['drop']({
         reply: (message) => {
           bot.api.interactions(interaction.id, interaction.token).callback.post({
             data: {
                 type: 4,
-                data: { content: 'test' }
+                data: { content: message }
             }
           });
         }, author: interaction?.member?.user}, ['drop']);
@@ -155,7 +155,7 @@ Player not setup, use \`@smash-drop setup\` command.
     return;
   }
 
-  const characterPrefString = characterPrefToString(msg, player.characterPref);
+  const characterPrefString = characterPrefToString(msg, player.nautPref);
 
   msg.reply(`Command: Get Character Preference
 ${characterPrefString}
@@ -205,11 +205,11 @@ Do not include spaces in the character names
       discordUserId: msg.author.id,
       goldenCount: 0,
       earnedGoldenCount: 0,
-      characterPref: [],
+      nautPref: [],
     };
   }
 
-  player.characterPref = parseCharacterPref(msg,
+  player.nautPref = parseCharacterPref(msg,
     [legCharacter1, legCharacter2, legCharacter3],
     [epicCharacter1, epicCharacter2, epicCharacter3, epicCharacter4, epicCharacter5],
     [banCharacter1, banCharacter2, banCharacter3, banCharacter4, banCharacter5]
@@ -217,7 +217,7 @@ Do not include spaces in the character names
 
   await savePlayer(player);
 
-  const characterPrefString = characterPrefToString(msg, player.characterPref);
+  const characterPrefString = characterPrefToString(msg, player.nautPref);
 
   msg.reply(`Command: Setup
 ${msg.author.username} preference updated to ${characterPrefString}
@@ -246,29 +246,7 @@ commands['drop'] = async (msg: DiscordMessage, args) => {
 ${message}`;
   }, '');
 
-  const fullMessageParts = fullMessage.split('`  ');
-  const reactionEmoji = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣'];
-  const messageConfig = map(fullMessageParts, (messagePart, index) => {
-    const reaction = reactionEmoji[index];
-    if (reaction) {
-      return {
-        initialMessage: `${reactionEmoji[index]}\`React To Reveal\`  `,
-        revealMessage: `${messagePart}\`  `,
-        userDiscordId: allPlayers[0].discordUserId,
-        reactionEmoji: reactionEmoji[index],
-        isRevealed: false,
-      };
-    }
-
-    return {
-      initialMessage: `${messagePart}`,
-      revealMessage: `${messagePart}`,
-      userDiscordId: allPlayers[0].discordUserId,
-      reactionEmoji: '',
-      isRevealed: false,
-    };
-  });
-  setupDiscordMessageReveal(msg, messageConfig);
+  return msg.reply(fullMessage);
 }
 
 let dropCount = 0;
@@ -348,7 +326,7 @@ No golden counts to spend for a reroll
   // Guarentee a legendary with golden roll
   const hasLegendaryCharacters = _.some(sortedHaul, (character) => character && (character.tier === 'legendary'));
   if (!hasLegendaryCharacters) {
-    const legendaryCharacters = _.filter(player.characterPref, (character) => character.tier === 'legendary') || [];
+    const legendaryCharacters = _.filter(player.nautPref, (character) => character.tier === 'legendary') || [];
     const shuffledLegendaryCharacters = _.shuffle(legendaryCharacters);
     sortedHaul[0] = shuffledLegendaryCharacters.pop();
   }
